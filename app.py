@@ -1,10 +1,10 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
 from summarizer import summarize_pdf
 
 app = Flask(__name__)
-CORS(app)  # Enables CORS so Netlify frontend can access it
+CORS(app)
 
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -20,14 +20,20 @@ def summarize():
         return jsonify({'error': 'No PDF uploaded'}), 400
 
     file = request.files['pdf']
-    if file.filename.endswith('.pdf'):
+    if file and file.filename.endswith('.pdf'):
         path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
         file.save(path)
-        summary = summarize_pdf(path)
-        return jsonify({'summary': summary})
+        print(f"📥 File received: {file.filename} saved to {path}")
+
+        try:
+            summary = summarize_pdf(path)
+            return jsonify({'summary': summary})
+        except Exception as e:
+            print(f"❌ Error in summarize_pdf: {e}")
+            return jsonify({'error': 'Failed to summarize PDF'}), 500
     else:
-        return jsonify({'error': 'Invalid file format'}), 400
+        return jsonify({'error': 'Invalid file format. Only PDFs are allowed.'}), 400
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 10000))
+    port = int(os.environ.get("PORT", 10000))  # Render uses PORT env var
     app.run(host='0.0.0.0', port=port)
