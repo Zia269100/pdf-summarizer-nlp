@@ -2,3 +2,4 @@ Flask
 transformers
 torch
 PyMuPDF
+flask-cors
